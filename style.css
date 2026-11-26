@@ -656,3 +656,64 @@ body:not(.dark) .level-header.advanced, body:not(.dark) .level-advanced { color:
   .toolbar-actions { margin-left: auto; }
   .scene-v2 { height: 305px; }
 }
+
+.arrange-help {
+  margin: 0;
+  padding: 7px 9px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .7rem;
+}
+#arrangeDiagram[aria-pressed="true"] {
+  color: #263b1d;
+  background: var(--green);
+  border-color: #829b65;
+}
+#diagram.is-arranging { touch-action: none; }
+#diagram.is-arranging [data-layout-node] { cursor: grab; }
+#diagram.is-arranging.is-dragging,
+#diagram.is-arranging.is-dragging [data-layout-node] { cursor: grabbing; }
+#diagram.is-arranging [data-layout-node]:focus-visible > .shape {
+  filter: drop-shadow(0 0 4px #648942);
+}
+.flow-link { pointer-events: none; }
+.flow-link.link-obscured { display: none; }
+.flow-link .diagram-edge {
+  stroke: var(--flow-muted);
+  stroke-width: 2.5px;
+  stroke-dasharray: none;
+  opacity: .8;
+}
+.flow-link .diagram-edge.edge-active {
+  stroke: var(--flow-active);
+  stroke-width: 3.5px;
+  stroke-dasharray: none;
+  filter: none;
+  opacity: 1;
+}
+.flow-link .diagram-edge.edge-failed {
+  stroke: var(--flow-failed);
+  stroke-width: 3px;
+  stroke-dasharray: 6 5;
+  opacity: 1;
+}
+.flow-link .scene-trail { stroke-width: 2.8px; }
+.flow-link .rollback-path { fill: none; stroke-width: 3px; stroke-dasharray: 8 6; }
+.arrow-muted { fill: var(--flow-muted); }
+.arrow-active { fill: var(--flow-active); }
+.arrow-failed { fill: var(--flow-failed); }
+#diagram {
+  --flow-muted: #7d8070;
+  --flow-active: #39704a;
+  --flow-failed: #a23b36;
+}
+.dark #diagram {
+  --flow-muted: #a6a398;
+  --flow-active: #a2d294;
+  --flow-failed: #f2968e;
+}
+@media (min-width: 581px) and (max-width: 1100px) {
+  .canvas-toolbar { flex-wrap: wrap; }
+  .metrics { flex-basis: 100%; }
+  .toolbar-actions { margin-left: auto; }
+}

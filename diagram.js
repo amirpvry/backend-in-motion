@@ -120,7 +120,19 @@ case 'cloud':return `<path d="M-62 8 Q-70 -17 -43 -25 Q-35 -61 -4 -49 Q20 -63 34
 
 function nodeIcon(shape){if(shape==='cube')return `<g class="node-glyph" fill="#fffdf7" stroke="#34463c" stroke-width="2"><rect x="-13" y="-29" width="26" height="17" rx="3"/><path d="M-8 -23h10 M-8 -18h10" fill="none"/><circle cx="7" cy="-23" r="1.5" fill="#50a778" stroke="none"/></g>`;if(shape==='cylinder')return `<g class="node-glyph" fill="none" stroke="#34463c" stroke-width="2"><ellipse cx="0" cy="-32" rx="10" ry="4"/><path d="M-10 -32v12q10 8 20 0v-12 M-10 -26q10 8 20 0"/></g>`;if(shape==='shield')return `<g class="node-glyph" fill="none" stroke="#34463c" stroke-width="2.5"><path d="M-9 -22v-5a9 9 0 0 1 18 0v5"/><rect x="-12" y="-22" width="24" height="18" rx="3" fill="#fffaf0"/><path d="M0 -17v7"/></g>`;if(shape==='queue')return `<g class="node-glyph" fill="#fffdf7" stroke="#34463c" stroke-width="1.5"><rect x="-28" y="-20" width="12" height="12" rx="2"/><rect x="-6" y="-20" width="12" height="12" rx="2"/><rect x="16" y="-20" width="12" height="12" rx="2"/></g>`;return ''}
 
-function edgePath(a,b){const dx=b[1]-a[1],dy=b[2]-a[2];const sx=a[1]+Math.sign(dx)*59,sy=a[2],ex=b[1]-Math.sign(dx)*59,ey=b[2];if(Math.abs(dy)<40)return `M${sx} ${sy} L${ex} ${ey}`;const mid=(sx+ex)/2;return `M${sx} ${sy} Q${mid} ${sy} ${mid} ${(sy+ey)/2} Q${mid} ${ey} ${ex} ${ey}`}
+function flowMarkers() {
+  return ['muted', 'active', 'failed'].map(state =>
+    `<marker id="flow-arrow-${state}" viewBox="0 0 12 10" refX="10" refY="5" markerWidth="12" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path class="arrow-${state}" d="M1 1.5 L10 5 L1 8.5 Z"/></marker>`
+  ).join('');
+}
+function flowLink({ id, from, to, path, state = 'muted', className, load = 0, stroke }) {
+  const pathId = 'flow-edge-' + id;
+  const line = `<path id="${pathId}" class="${className}" d="${path}" marker-end="url(#flow-arrow-${state})"${stroke ? ' stroke="' + stroke + '"' : ''}/>`;
+  const packets = Array.from({ length: Math.min(load, 4) }, (_, index) =>
+    `<circle class="flow-packet" r="${index ? 3.5 : 5}" fill="${index ? '#a3db9f' : '#388a5a'}"><animateMotion dur="${Math.max(1.5, 3.6 - load * .35)}s" begin="-${index * .54}s" repeatCount="indefinite"><mpath href="#${pathId}"/></animateMotion></circle>`
+  ).join('');
+  return `<g class="flow-link" data-edge-from="${from}" data-edge-to="${to}">${line}${packets}</g>`;
+}
 function diagramViewBox(result,step,scenario){
   if(scenario||step>=2||!result.nodes.length)return '0 0 1000 500';
   const xs=result.nodes.map(node=>node[1]),ys=result.nodes.map(node=>node[2]);
@@ -148,10 +160,21 @@ if(failureActive&&failedNode){const target=availableEdges.find(({edge})=>edge[1]
 const activeEdge=activeIndex>=0?edges[activeIndex]:null;
 const alternate=failureActive&&layout.fallback&&activeEdge?availableEdges.find(({edge,i})=>i!==activeIndex&&edge[0]===activeEdge[0]&&edge[1]!==failedNode)?.i:-1;
 const effectiveEdge=alternate>=0?alternate:activeIndex;
-let out=`<defs><filter id="nodeShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="6" dy="9" stdDeviation="5" flood-color="#20392b" flood-opacity=".18"/></filter><marker id="edgeArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10" fill="none" stroke="#486653" stroke-width="1.4"/></marker></defs>`;
+let out=`<defs><filter id="nodeShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="6" dy="9" stdDeviation="5" flood-color="#20392b" flood-opacity=".18"/></filter>${flowMarkers()}</defs>`;
 const nodeMap=new Map(nodes.map(n=>[n[0],n]));
-availableEdges.forEach(({edge,i})=>{const a=nodeMap.get(edge[0]),b=nodeMap.get(edge[1]),path=edgePath(a,b),active=i===effectiveEdge&&(!failureActive||alternate>=0),failed=failureActive&&edge.includes(failedNode);out+=`<path class="diagram-edge scene-reveal ${active?'edge-active':''} ${failed?'edge-failed':''}" d="${path}" marker-end="url(#edgeArrow)"/>`;if(active){for(let j=0;j<Math.min(load,4);j++)out+=`<circle class="flow-packet" r="${j?5:8}" fill="${j?'#a3db9f':'#388a5a'}"><animateMotion dur="${Math.max(1.5,3.6-load*.35)}s" begin="-${j*.54}s" repeatCount="indefinite" path="${path}"/></circle>`}});
- visibleNodes.forEach((n,i)=>{const [id,x,y,shape,label]=n,active=failureActive?id===failedNode:i===visibleNodes.length-1,failed=id===failedNode,color=failed?'#ffd4d0':tint(lesson.category.color,.72),caption=svgEscape(label),labelY=shape==='browser'||shape==='people'?86:shape==='cylinder'?10:24,labelWidth=Math.max(54,label.length*7+20);out+=`<g class="diagram-node ${active&&step<=4?'scene-enter':''} ${active?'node-hot':''} ${failed?'node-failed':''}" data-inspect="${id}" transform="translate(${x} ${y})" tabindex="0" role="button" aria-label="Inspect ${caption}">${groundSvg()}<g class="shape" filter="url(#nodeShadow)" stroke="#31453a" stroke-width="2.5" stroke-linejoin="round">${shapeSvg(shape,color)}</g>${nodeIcon(shape)}<g class="node-badge"><rect x="${-labelWidth/2}" y="${labelY-14}" width="${labelWidth}" height="20" rx="10"/><text class="node-label" x="0" y="${labelY}" text-anchor="middle">${caption}</text></g>${failed?'<text class="fail-mark" x="49" y="-45">×</text>':''}</g>`});
+availableEdges.forEach(({edge, i}) => {
+  const [from, to] = edge;
+  const a = nodeMap.get(from), b = nodeMap.get(to);
+  const active = i === effectiveEdge && (!failureActive || alternate >= 0);
+  const failed = failureActive && edge.includes(failedNode);
+  out += flowLink({
+    id: i, from, to, path: `M${a[1]} ${a[2]} L${b[1]} ${b[2]}`,
+    className: `diagram-edge scene-reveal ${active ? 'edge-active' : ''} ${failed ? 'edge-failed' : ''}`,
+    state: failed ? 'failed' : active ? 'active' : 'muted',
+    load: active ? load : 0
+  });
+});
+ visibleNodes.forEach((n,i)=>{const [id,x,y,shape,label]=n,active=failureActive?id===failedNode:i===visibleNodes.length-1,failed=id===failedNode,color=failed?'#ffd4d0':tint(lesson.category.color,.72),caption=svgEscape(label),labelY=shape==='browser'||shape==='people'?86:shape==='cylinder'?10:24,labelWidth=Math.max(54,label.length*7+20);out+=`<g class="diagram-node ${active&&step<=4?'scene-enter':''} ${active?'node-hot':''} ${failed?'node-failed':''}" data-inspect="${id}" data-layout-node="${id}" transform="translate(${x} ${y})" tabindex="0" role="button" aria-label="Inspect ${caption}">${groundSvg()}<g class="shape" filter="url(#nodeShadow)" stroke="#31453a" stroke-width="2.5" stroke-linejoin="round">${shapeSvg(shape,color)}</g>${nodeIcon(shape)}<g class="node-badge"><rect x="${-labelWidth/2}" y="${labelY-14}" width="${labelWidth}" height="20" rx="10"/><text class="node-label" x="0" y="${labelY}" text-anchor="middle">${caption}</text></g>${failed?'<text class="fail-mark" x="49" y="-45">×</text>':''}</g>`});
 if(step>=2)out+=diagramDecor(layout.kind,step,load,failureActive);
 if(failureActive)out+=`<g class="failure-banner"><rect x="328" y="18" width="344" height="34" rx="17"/><text x="500" y="40" text-anchor="middle">FAILURE MODE · ${alternate>=0?'HEALTHY PATH ACTIVE':'INSPECT THE FAILED COMPONENT'}</text></g>`;
  const result={html:out,nodes:visibleNodes,layout,failedNode};
