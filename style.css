@@ -717,3 +717,21 @@ body:not(.dark) .level-header.advanced, body:not(.dark) .level-advanced { color:
   .metrics { flex-basis: 100%; }
   .toolbar-actions { margin-left: auto; }
 }
+
+.site-owner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.site-owner a {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  text-underline-offset: 3px;
+}

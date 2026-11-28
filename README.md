@@ -28,6 +28,10 @@ Then open `http://localhost:4173`.
 
 The `main` branch is connected to Vercel. Commits to `main` deploy automatically to the live site; other branches receive preview deployments.
 
+## Site owner
+
+[@amirpvry on GitHub](https://github.com/amirpvry) · [amirmahdi.alipooor@gmail.com](mailto:amirmahdi.alipooor@gmail.com)
+
 ## Project context
 
 The visual direction was inspired by [Designed to Scale](https://designed-to-scale.vercel.app/). Backend, In Motion has its own curriculum, interface, and diagrams. The project was developed with AI assistance.
